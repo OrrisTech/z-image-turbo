@@ -18,12 +18,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install Cog
-        run: pip install cog
-
-      - name: Login to Replicate
-        run: cog login
-        env:
-          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+        run: |
+          pip install --upgrade pip
+          pip install cog
 
       - name: Push to Replicate
-        run: cog push r8.im/leizeng/z-image-turbo
+        env:
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+        run: |
+          cog login --token $REPLICATE_API_TOKEN
+          cog push r8.im/leizeng/z-image-turbo
