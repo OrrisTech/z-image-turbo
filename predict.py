@@ -8,16 +8,35 @@ from typing import Optional
 import torch
 from cog import BasePredictor, Input, Path
 from diffusers import DiffusionPipeline
+from huggingface_hub import snapshot_download
 
 # Force stdout/stderr to be unbuffered for real-time logs
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
+
+MODEL_NAME = "Tongyi-MAI/Z-Image-Turbo"
+MODEL_CACHE = "./model-cache"
 
 
 def log(message: str):
     """Print timestamped log message."""
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {message}", flush=True)
+
+
+def download_model():
+    """Download model weights if not exists."""
+    if not FilePath(MODEL_CACHE).exists():
+        log(f"Downloading model {MODEL_NAME}...")
+        snapshot_download(
+            MODEL_NAME,
+            local_dir=MODEL_CACHE,
+            local_dir_use_symlinks=False,
+            resume_download=True,
+        )
+        log("Model download completed!")
+    else:
+        log(f"Model already exists at {MODEL_CACHE}")
 
 
 class Predictor(BasePredictor):
@@ -36,21 +55,18 @@ class Predictor(BasePredictor):
                 log(f"GPU: {torch.cuda.get_device_name(0)}")
                 log(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
             
-            # Check if model weights exist
-            model_path = "./model-cache"
-            if not FilePath(model_path).exists():
-                log(f"ERROR: Model cache not found at {model_path}")
-                log("Model weights should be downloaded during build time")
-                raise FileNotFoundError(f"Model cache not found: {model_path}")
+            # Download model if needed
+            log("Checking model weights...")
+            download_model()
             
-            log(f"Model cache found at: {model_path}")
+            log(f"Model cache found at: {MODEL_CACHE}")
             
             # Load pipeline
             log("Loading Z-Image-Turbo pipeline...")
             start_time = time.time()
             
             self.pipe = DiffusionPipeline.from_pretrained(
-                model_path,
+                MODEL_CACHE,
                 torch_dtype=torch.bfloat16,
                 use_safetensors=True,
             )

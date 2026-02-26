@@ -5,7 +5,7 @@ build:
   # Z-Image requires GPU
   gpu: true
   
-  # CUDA version for PyTorch compatibility
+  # CUDA version
   cuda: "11.8"
   
   # System packages required for image processing
@@ -13,18 +13,11 @@ build:
     - "libgl1-mesa-glx"
     - "libglib2.0-0"
   
-  # Python 3.11 for better compatibility with PyTorch ecosystem
+  # Python 3.11
   python_version: "3.11"
   
   # Python dependencies
   python_requirements: requirements.txt
-  
-  # Download model weights during build
-  # This ensures weights are baked into the image
-  run:
-    - "pip install -U huggingface_hub"
-    - "python download_weights.py"
-    - "echo 'Build completed successfully!'"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
