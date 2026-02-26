@@ -1,0 +1,28 @@
+# Configuration for Cog ⚙️
+# Reference: https://cog.run/yaml
+
+build:
+  # Z-Image requires GPU
+  gpu: true
+  
+  # CUDA version for PyTorch compatibility
+  cuda: "12.1"
+  
+  # System packages required for image processing
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  
+  # Python 3.11 for better compatibility with PyTorch ecosystem
+  python_version: "3.11"
+  
+  # Python dependencies
+  python_requirements: requirements.txt
+  
+  # Download model weights during build
+  run:
+    - "pip install -U huggingface_hub"
+    - "python download_weights.py"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
