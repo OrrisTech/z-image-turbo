@@ -151,9 +151,9 @@ class Predictor(BasePredictor):
             ge=1,
             le=50
         ),
-        seed: Union[int, None] = Input(
-            description="Random seed for reproducibility. Leave blank for random generation.",
-            default=None
+        seed: int = Input(
+            description="Random seed for reproducibility. Use 0 for random.",
+            default=0
         ),
     ) -> Path:
         """Generate an image from a text prompt using Z-Image-Turbo."""
@@ -167,9 +167,9 @@ class Predictor(BasePredictor):
             log(f"Seed: {seed}")
             log("=" * 60)
             
-            # Set random seed if provided
+            # Set random seed if provided (0 means random)
             generator = None
-            if seed is not None:
+            if seed != 0:
                 generator = torch.Generator("cuda").manual_seed(seed)
                 log(f"Using seed: {seed}")
             
