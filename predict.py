@@ -3,7 +3,7 @@ import sys
 import time
 import traceback
 from pathlib import Path as FilePath
-from typing import Optional
+from typing import Union
 
 import torch
 from cog import BasePredictor, Input, Path
@@ -151,7 +151,7 @@ class Predictor(BasePredictor):
             ge=1,
             le=50
         ),
-        seed: Optional[int] = Input(
+        seed: Union[int, None] = Input(
             description="Random seed for reproducibility. Leave blank for random generation.",
             default=None
         ),
