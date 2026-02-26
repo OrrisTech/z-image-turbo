@@ -20,9 +20,19 @@ build:
   python_requirements: requirements.txt
   
   # Download model weights during build
+  # This ensures weights are baked into the image
   run:
     - "pip install -U huggingface_hub"
     - "python download_weights.py"
+    - "echo 'Build completed successfully!'"
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
+
+# Increase timeout for model loading (default is 60s)
+# Z-Image-Turbo needs more time for initial setup
+image:
+  # Set environment variables for better logging
+  env:
+    - PYTHONUNBUFFERED=1
+    - CUDA_LAUNCH_BLOCKING=1

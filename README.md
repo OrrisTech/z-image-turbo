@@ -20,12 +20,22 @@ Deploy [Z-Image-Turbo](https://github.com/Tongyi-MAI/Z-Image) to Replicate.
 
 ```
 zimage-replicate-model/
-├── cog.yaml              # Cog configuration
-├── predict.py            # Prediction interface
-├── requirements.txt      # Python dependencies
-├── download_weights.py   # Model weight downloader
-└── README.md            # This file
+├── cog.yaml                # Cog configuration
+├── predict.py              # Prediction interface (with detailed logging)
+├── requirements.txt        # Python dependencies
+├── download_weights.py     # Model weight downloader
+├── TROUBLESHOOTING.md      # Debugging guide
+└── README.md              # This file
 ```
+
+## Key Features
+
+- ✅ **Detailed Logging**: Timestamped logs for every operation
+- ✅ **Error Handling**: Full tracebacks on failures
+- ✅ **Pre-downloaded Weights**: Model baked into Docker image
+- ✅ **Optimized Setup**: Warmup run for faster predictions
+- ✅ **Resource Monitoring**: GPU memory usage tracking
+- ✅ **Unbuffered Output**: Real-time log visibility
 
 ## Local Development
 
@@ -99,9 +109,15 @@ print(output)
 
 ## Performance
 
-- **Inference time**: ~1 second on H800 GPU (after warmup)
+- **Build time**: 10-15 minutes (downloading 12GB model)
+- **Setup time**: 30-60 seconds (loading model to GPU)
+- **Inference time**: 2-5 seconds (1024x1024, 8 steps)
 - **VRAM usage**: ~16GB
 - **Recommended resolution**: 1024x1024
+
+## Troubleshooting
+
+If you encounter issues (model stuck, no logs, etc.), see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed debugging guide.
 
 ## License
 

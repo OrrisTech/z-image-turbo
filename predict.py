@@ -1,29 +1,115 @@
-"""Z-Image Predictor for Replicate."""
-from cog import BasePredictor, Input, Path
-import torch
-from diffusers import ZImagePipeline
+"""Z-Image Predictor for Replicate with detailed logging and error handling."""
+import sys
+import time
+import traceback
+from pathlib import Path as FilePath
 from typing import Optional
+
+import torch
+from cog import BasePredictor, Input, Path
+from diffusers import DiffusionPipeline
+
+# Force stdout/stderr to be unbuffered for real-time logs
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
+
+def log(message: str):
+    """Print timestamped log message."""
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {message}", flush=True)
+
 
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the Z-Image model into memory."""
-        print("Loading Z-Image-Turbo model...")
-        
-        self.pipe = ZImagePipeline.from_pretrained(
-            "./model-cache",
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=False,
-        )
-        self.pipe.to("cuda")
-        
-        # Enable Flash Attention for better performance
         try:
-            self.pipe.transformer.set_attention_backend("flash")
-            print("Flash Attention enabled")
+            log("=" * 60)
+            log("Starting Z-Image-Turbo setup...")
+            log("=" * 60)
+            
+            # Check CUDA availability
+            log(f"PyTorch version: {torch.__version__}")
+            log(f"CUDA available: {torch.cuda.is_available()}")
+            if torch.cuda.is_available():
+                log(f"CUDA version: {torch.version.cuda}")
+                log(f"GPU: {torch.cuda.get_device_name(0)}")
+                log(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
+            
+            # Check if model weights exist
+            model_path = "./model-cache"
+            if not FilePath(model_path).exists():
+                log(f"ERROR: Model cache not found at {model_path}")
+                log("Model weights should be downloaded during build time")
+                raise FileNotFoundError(f"Model cache not found: {model_path}")
+            
+            log(f"Model cache found at: {model_path}")
+            
+            # Load pipeline
+            log("Loading Z-Image-Turbo pipeline...")
+            start_time = time.time()
+            
+            self.pipe = DiffusionPipeline.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                use_safetensors=True,
+            )
+            
+            log(f"Pipeline loaded in {time.time() - start_time:.2f}s")
+            
+            # Move to GPU
+            log("Moving model to CUDA...")
+            start_time = time.time()
+            self.pipe.to("cuda")
+            log(f"Model moved to CUDA in {time.time() - start_time:.2f}s")
+            
+            # Enable optimizations
+            log("Enabling optimizations...")
+            
+            # Try to enable Flash Attention
+            try:
+                if hasattr(self.pipe, 'transformer'):
+                    self.pipe.transformer.set_attention_backend("flash")
+                    log("✓ Flash Attention enabled")
+            except Exception as e:
+                log(f"⚠ Flash Attention not available: {e}")
+            
+            # Enable memory efficient attention
+            try:
+                self.pipe.enable_attention_slicing()
+                log("✓ Attention slicing enabled")
+            except Exception as e:
+                log(f"⚠ Attention slicing failed: {e}")
+            
+            # Warmup run
+            log("Running warmup inference...")
+            start_time = time.time()
+            _ = self.pipe(
+                prompt="test",
+                height=512,
+                width=512,
+                num_inference_steps=1,
+                guidance_scale=0.0,
+            )
+            log(f"Warmup completed in {time.time() - start_time:.2f}s")
+            
+            # Clear CUDA cache
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                log(f"GPU memory allocated: {torch.cuda.memory_allocated(0) / 1024**3:.2f} GB")
+                log(f"GPU memory reserved: {torch.cuda.memory_reserved(0) / 1024**3:.2f} GB")
+            
+            log("=" * 60)
+            log("✓ Setup completed successfully!")
+            log("=" * 60)
+            
         except Exception as e:
-            print(f"Flash Attention not available: {e}")
-        
-        print("Model loaded successfully!")
+            log("=" * 60)
+            log(f"✗ SETUP FAILED: {str(e)}")
+            log("=" * 60)
+            log("Full traceback:")
+            traceback.print_exc()
+            raise
 
     def predict(
         self,
@@ -45,7 +131,7 @@ class Predictor(BasePredictor):
         ),
         num_inference_steps: int = Input(
             description="Number of denoising steps (Z-Image-Turbo uses 8 steps)",
-            default=9,
+            default=8,
             ge=1,
             le=50
         ),
@@ -56,26 +142,56 @@ class Predictor(BasePredictor):
     ) -> Path:
         """Generate an image from a text prompt using Z-Image-Turbo."""
         
-        # Set random seed if provided
-        generator = None
-        if seed is not None:
-            generator = torch.Generator("cuda").manual_seed(seed)
-        
-        print(f"Generating image with prompt: {prompt}")
-        print(f"Size: {width}x{height}, Steps: {num_inference_steps}, Seed: {seed}")
-        
-        # Generate image
-        image = self.pipe(
-            prompt=prompt,
-            height=height,
-            width=width,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=0.0,  # Z-Image-Turbo uses guidance_scale=0
-            generator=generator,
-        ).images[0]
-        
-        # Save output
-        output_path = "/tmp/output.png"
-        image.save(output_path)
-        
-        return Path(output_path)
+        try:
+            log("=" * 60)
+            log("Starting prediction...")
+            log(f"Prompt: {prompt}")
+            log(f"Size: {width}x{height}")
+            log(f"Steps: {num_inference_steps}")
+            log(f"Seed: {seed}")
+            log("=" * 60)
+            
+            # Set random seed if provided
+            generator = None
+            if seed is not None:
+                generator = torch.Generator("cuda").manual_seed(seed)
+                log(f"Using seed: {seed}")
+            
+            # Generate image
+            log("Generating image...")
+            start_time = time.time()
+            
+            image = self.pipe(
+                prompt=prompt,
+                height=height,
+                width=width,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=0.0,  # Z-Image-Turbo uses guidance_scale=0
+                generator=generator,
+            ).images[0]
+            
+            generation_time = time.time() - start_time
+            log(f"✓ Image generated in {generation_time:.2f}s")
+            
+            # Save output
+            output_path = "/tmp/output.png"
+            log(f"Saving image to {output_path}...")
+            image.save(output_path, format="PNG", optimize=True)
+            
+            # Log GPU memory usage
+            if torch.cuda.is_available():
+                log(f"GPU memory allocated: {torch.cuda.memory_allocated(0) / 1024**3:.2f} GB")
+            
+            log("=" * 60)
+            log("✓ Prediction completed successfully!")
+            log("=" * 60)
+            
+            return Path(output_path)
+            
+        except Exception as e:
+            log("=" * 60)
+            log(f"✗ PREDICTION FAILED: {str(e)}")
+            log("=" * 60)
+            log("Full traceback:")
+            traceback.print_exc()
+            raise
