@@ -17,13 +17,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Cog
-        run: pip install cog
+      - name: Install dependencies
+        run: |
+          pip install pipx
+          pipx install cog
 
       - name: Push to Replicate
         env:
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
         run: |
-          COG_PATH=$(python -c "import cog; import os; print(os.path.dirname(cog.__file__))")/../bin/cog
-          $COG_PATH login --token "$REPLICATE_API_TOKEN"
-          $COG_PATH push r8.im/leizeng/z-image-turbo
+          ~/.local/bin/cog login --token "$REPLICATE_API_TOKEN"
+          ~/.local/bin/cog push r8.im/leizeng/z-image-turbo
