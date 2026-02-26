@@ -12,38 +12,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Cog
+        uses: replicate/setup-cog@main
         with:
-          python-version: '3.11'
-
-      - name: Install Cog
-        run: pip install --break-system-packages cog
+          replicate_api_token: ${{ secrets.REPLICATE_API_TOKEN }}
 
       - name: Push to Replicate
-        env:
-          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
         run: |
-          which cog || find /opt -name cog -type f 2>/dev/null || true
-          python -c "
-import os
-import subprocess
-import sys
-
-# Install cog in user mode
-subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--break-system-packages', 'cog'])
-
-# Find cog executable
-result = subprocess.run([sys.executable, '-m', 'pip', 'show', '-f', 'cog'], capture_output=True, text=True)
-for line in result.stdout.split('\n'):
-    if line.endswith('cog') or line.endswith('cog.exe'):
-        cog_path = line.split(': ')[-1].strip()
-        if not cog_path.startswith('/'):
-            continue
-        print(f'Found cog at: {cog_path}')
-        # Login
-        subprocess.check_call([sys.executable, cog_path, 'login', '--token', os.environ['REPLICATE_API_TOKEN']])
-        # Push
-        subprocess.check_call([sys.executable, cog_path, 'push', 'r8.im/leizeng/z-image-turbo'])
-        break
-"
+          cog push r8.im/leizeng/z-image-turbo
