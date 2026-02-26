@@ -6,7 +6,7 @@ build:
   gpu: true
   
   # CUDA version for PyTorch compatibility
-  cuda: "12.1"
+  cuda: "11.8"
   
   # System packages required for image processing
   system_packages:
@@ -28,11 +28,3 @@ build:
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
-
-# Increase timeout for model loading (default is 60s)
-# Z-Image-Turbo needs more time for initial setup
-image:
-  # Set environment variables for better logging
-  env:
-    - PYTHONUNBUFFERED=1
-    - CUDA_LAUNCH_BLOCKING=1
