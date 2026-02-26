@@ -1,6 +1,8 @@
 # Z-Image Replicate Deployment
 
-Deploy [Z-Image](https://github.com/Tongyi-MAI/Z-Image) text-to-image model to Replicate using Cog.
+Deploy [Z-Image-Turbo](https://github.com/Tongyi-MAI/Z-Image) to Replicate.
+
+**🚀 Replicate Model**: [`r8.im/leizeng/z-image-turbo`](https://replicate.com/leizeng/z-image-turbo)
 
 ## Model Information
 
