@@ -12,8 +12,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Push to Replicate
-        uses: replicate/push-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Replicate
+        uses: replicate/login-action@v1
         with:
-          model: leizeng/z-image-turbo
-          replicate_api_token: ${{ secrets.REPLICATE_API_TOKEN }}
+          token: ${{ secrets.REPLICATE_API_TOKEN }}
+
+      - name: Build and push
+        run: |
+          pip install cog
+          cog push r8.im/leizeng/z-image-turbo
