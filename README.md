@@ -32,7 +32,7 @@ zimage-replicate-model/
 
 - ✅ **Detailed Logging**: Timestamped logs for every operation
 - ✅ **Error Handling**: Full tracebacks on failures
-- ✅ **Pre-downloaded Weights**: Model baked into Docker image
+- ✅ **Auto-download Model**: Model downloaded on first run (~12GB)
 - ✅ **Optimized Setup**: Warmup run for faster predictions
 - ✅ **Resource Monitoring**: GPU memory usage tracking
 - ✅ **Unbuffered Output**: Real-time log visibility
