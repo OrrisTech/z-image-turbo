@@ -69,7 +69,7 @@ cog predict \
 
 ```bash
 cog login
-cog push r8.im/your-username/z-image
+cog push r8.im/leizeng/z-image-turbo
 ```
 
 ### 2. Use the API
@@ -78,7 +78,7 @@ cog push r8.im/your-username/z-image
 import replicate
 
 output = replicate.run(
-    "your-username/z-image:latest",
+    "leizeng/z-image-turbo:latest",
     input={
         "prompt": "A serene mountain landscape at sunset",
         "width": 1024,
